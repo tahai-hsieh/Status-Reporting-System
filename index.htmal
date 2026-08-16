@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地震緊急避難 - 安全回報系統 (離線版)</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #27ae60;
+            --danger-color: #e74c3c;
+            --bg-color: #f4f7f6;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: #333;
+        }
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            background-color: #34495e;
+        }
+        .nav-tabs button {
+            background: none;
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 50%;
+            transition: background 0.3s;
+        }
+        .nav-tabs button.active {
+            background-color: var(--accent-color);
+            font-weight: bold;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        button.btn-submit {
+            width: 100%;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 1.1rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button.btn-danger {
+            background-color: var(--danger-color);
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: white;
+            margin-bottom: 10px;
+        }
+        .offline-status {
+            background-color: #f39c12;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #ecf0f1;
+        }
+        .summary-card {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            background: #eef2f5;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .summary-item {
+            text-align: center;
+        }
+        .summary-item span {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2>地震緊急避難安全回報系統</h2>
+    <div class="status-badge offline-status" id="connectionStatus">離線模式運作中</div>
+</header>
+
+<div class="nav-tabs">
+    <button id="tabUserBtn" class="active" onclick="switchTab('userTab')">副班長回報端</button>
+    <button id="tabAdminBtn" onclick="switchTab('adminTab')">後台總指揮端</button>
+</div>
+
+<!-- 使用者端（副班長） -->
+<div id="userTab" class="container tab-content active">
+    <h3>各班狀況回報表單</h3>
+    <form id="reportForm">
+        <div class="form-group">
+            <label for="className">班級名稱</label>
+            <input type="text" id="className" placeholder="例如：一年一班" required>
+        </div>
+        <div class="form-group">
+            <label for="reporterName">回報人（副班長）</label>
+            <input type="text" id="reporterName" placeholder="請輸入姓名" required>
+        </div>
+        <div class="form-group">
+            <label for="safeCount">平安人數</label>
+            <input type="number" id="safeCount" min="0" value="0" required>
+        </div>
+        <div class="form-group">
+            <label for="injuredCount">受傷人數</label>
+            <input type="number" id="injuredCount" min="0" value="0" required>
+        </div>
+        <div class="form-group">
+            <label for="missingCount">未到/失聯人數</label>
+            <input type="number" id="missingCount" min="0" value="0" required>
+        </div>
+        <div class="form-group">
+            <label for="note">特殊情況說明（例如：受傷細節、地點）</label>
+            <textarea id="note" rows="3" placeholder="若無特殊狀況可留空"></textarea>
+        </div>
+        <button type="submit" class="btn-submit">提交回報（儲存於本地）</button>
+    </form>
+</div>
+
+<!-- 後台端（總指揮） -->
+<div id="adminTab" class="container tab-content">
+    <h3>後台總覽與統計</h3>
+    
+    <div class="summary-card">
+        <div class="summary-item">
+            平安總數
+            <span id="totalSafe" style="color: var(--accent-color);">0</span>
+        </div>
+        <div class="summary-item">
+            受傷總數
+            <span id="totalInjured" style="color: var(--danger-color);">0</span>
+        </div>
+        <div class="summary-item">
+            失聯總數
+            <span id="totalMissing" style="color: #f39c12;">0</span>
+        </div>
+    </div>
+
+    <button onclick="exportData()" class="btn-submit" style="margin-bottom: 10px; background-color: #3498db;">匯出 JSON 備份檔</button>
+    <button onclick="clearData()" class="btn-submit btn-danger">清空所有儲存資料</button>
+
+    <h4>已回報班級明細</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>班級</th>
+                <th>回報人</th>
+                <th>平安</th>
+                <th>受傷</th>
+                <th>失聯</th>
+                <th>時間</th>
+            </tr>
+        </thead>
+        <tbody id="reportTableBody">
+            <!-- 動態加入資料 -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // 頁面切換 logic
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.nav-tabs button').forEach(btn => btn.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.add('active');
+        if (tabId === 'userTab') {
+            document.getElementById('tabUserBtn').classList.add('active');
+        } else {
+            document.getElementById('tabAdminBtn').classList.add('active');
+            renderAdminDashboard();
+        }
+    }
+
+    // 取得與儲存本地資料
+    function getReports() {
+        const reports = localStorage.getItem('disaster_reports');
+        return reports ? JSON.parse(reports) : [];
+    }
+
+    function saveReport(data) {
+        const reports = getReports();
+        reports.push(data);
+        localStorage.setItem('disaster_reports', JSON.stringify(reports));
+    }
+
+    // 表單提交處理
+    document.getElementById('reportForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const reportData = {
+            id: Date.now(),
+            className: document.getElementById('className').value,
+            reporterName: document.getElementById('reporterName').value,
+            safeCount: parseInt(document.getElementById('safeCount').value) || 0,
+            injuredCount: parseInt(document.getElementById('injuredCount').value) || 0,
+            missingCount: parseInt(document.getElementById('missingCount').value) || 0,
+            note: document.getElementById('note').value,
+            timestamp: new Date().toLocaleTimeString()
+        };
+
+        saveReport(reportData);
+        alert('回報已順利儲存於本機系統！');
+        this.reset();
+    });
+
+    // 渲染後台資料
+    function renderAdminDashboard() {
+        const reports = getReports();
+        const tbody = document.getElementById('reportTableBody');
+        tbody.innerHTML = '';
+
+        let totalSafe = 0;
+        let totalInjured = 0;
+        let totalMissing = 0;
+
+        reports.forEach(report => {
+            totalSafe += report.safeCount;
+            totalInjured += report.injuredCount;
+            totalMissing += report.missingCount;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${escapeHtml(report.className)}</td>
+                <td>${escapeHtml(report.reporterName)}</td>
+                <td>${report.safeCount}</td>
+                <td>${report.injuredCount}</td>
+                <td>${report.missingCount}</td>
+                <td>${report.timestamp}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('totalSafe').innerText = totalSafe;
+        document.getElementById('totalInjured').innerText = totalInjured;
+        document.getElementById('totalMissing').innerText = totalMissing;
+    }
+
+    // 輔助函式：防 HTML 注入
+    function escapeHtml(text) {
+        return text.replace(/[&<>"']/g, function(m) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[m];
+        });
+    }
+
+    // 資料匯出機制
+    function exportData() {
+        const reports = getReports();
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(reports, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `避難安全回報備份_${new Date().toISOString().slice(0,10)}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    // 清除資料
+    function clearData() {
+        if (confirm("確定要清除所有已回報的歷史資料嗎？")) {
+            localStorage.removeItem('disaster_reports');
+            renderAdminDashboard();
+        }
+    }
+</script>
+
+</body>
+</html>
