@@ -38,7 +38,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow-x: auto; /* 防超大字體撐破 */
+            overflow-x: auto;
         }
         
         header h2 {
@@ -48,7 +48,7 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            white-space: nowrap; /* 強制不自動換行 */
+            white-space: nowrap;
         }
 
         /* 標題旁圖示 */
@@ -83,11 +83,11 @@
             text-align: center;
         }
 
-        /* 平板裝置（螢幕寬度 768px 以下）：調整版面配置，往左對齊並保留右側按鈕空間 */
+        /* 平板裝置（螢幕寬度 768px 以下） */
         @media (max-width: 768px) {
             header {
                 align-items: flex-start;
-                padding: 1rem 100px 1rem 1rem; /* 右側留出 100px 避免擋到後台按鈕 */
+                padding: 1rem 100px 1rem 1rem;
             }
             header h2 {
                 font-size: 1.1rem;
@@ -98,7 +98,7 @@
             }
         }
 
-        /* 手機裝置（螢幕寬度 480px 以下）：微調字級與邊距，維持單行靠左顯示 */
+        /* 手機裝置（螢幕寬度 480px 以下） */
         @media (max-width: 480px) {
             header {
                 padding: 0.8rem 85px 0.8rem 0.8rem;
@@ -140,6 +140,13 @@
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
+        }
+        /* 紅色小米字號 */
+        .required-asterisk {
+            color: var(--danger-color);
+            font-size: 0.85em;
+            vertical-align: super;
+            margin-left: 2px;
         }
         input, select, textarea {
             width: 100%;
@@ -257,7 +264,7 @@
     <h3>各班狀況回報表單</h3>
     <form id="reportForm">
         <div class="form-group">
-            <label for="className">班級名稱</label>
+            <label for="className">班級名稱<span class="required-asterisk">*</span></label>
             <select id="className" required>
                 <option value="" disabled selected>請選擇班級</option>
                 <!-- 七年級 -->
@@ -299,24 +306,24 @@
             </select>
         </div>
         <div class="form-group">
-            <label for="reporterName">回報人（副班長）</label>
+            <label for="reporterName">回報人（副班長）<span class="required-asterisk">*</span></label>
             <input type="text" id="reporterName" placeholder="請輸入姓名" required>
         </div>
         <div class="form-group">
-            <label for="safeCount">平安人數</label>
+            <label for="safeCount">平安人數<span class="required-asterisk">*</span></label>
             <input type="number" id="safeCount" min="0" value="0" required>
         </div>
         <div class="form-group">
-            <label for="injuredCount">受傷人數</label>
+            <label for="injuredCount">受傷人數<span class="required-asterisk">*</span></label>
             <input type="number" id="injuredCount" min="0" value="0" required>
         </div>
         <div class="form-group">
-            <label for="missingCount">未到/失聯人數</label>
+            <label for="missingCount">未到/失聯人數<span class="required-asterisk">*</span></label>
             <input type="number" id="missingCount" min="0" value="0" required>
         </div>
         <div class="form-group">
-            <label for="note">特殊情況說明（例如：受傷細節、地點）</label>
-            <textarea id="note" rows="3" placeholder="若無特殊狀況可留空"></textarea>
+            <label for="note">特殊情況說明（例如：受傷細節、地點）<span class="required-asterisk">*</span></label>
+            <textarea id="note" rows="3" placeholder="若無特殊狀況請填「無」" required></textarea>
         </div>
         <button type="submit" class="btn-submit">提交回報（儲存於本地）</button>
     </form>
@@ -448,8 +455,8 @@
 
     function saveReport(data) {
         const reports = getReports();
-        
         const existingIndex = reports.findIndex(r => r.className === data.className);
+        
         if (existingIndex !== -1) {
             reports[existingIndex] = data;
         } else {
@@ -459,13 +466,25 @@
         localStorage.setItem('disaster_reports', JSON.stringify(reports));
     }
 
-    // 表單提交處理
+    // 表單提交處理（包含重複班級詢問彈窗）
     document.getElementById('reportForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
+        const className = document.getElementById('className').value;
+        const reports = getReports();
+        const isDuplicate = reports.some(r => r.className === className);
+
+        // 若班級已有資料，跳出確認提示框
+        if (isDuplicate) {
+            const confirmUpdate = confirm(`該班級（${className}）已有資料，是否要更新資料？`);
+            if (!confirmUpdate) {
+                return; // 使用者點擊取消，中斷提交
+            }
+        }
+        
         const reportData = {
             id: Date.now(),
-            className: document.getElementById('className').value,
+            className: className,
             reporterName: document.getElementById('reporterName').value,
             safeCount: parseInt(document.getElementById('safeCount').value) || 0,
             injuredCount: parseInt(document.getElementById('injuredCount').value) || 0,
