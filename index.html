@@ -27,49 +27,98 @@
             background-color: var(--bg-color);
             color: #333;
         }
+        
+        /* 標題區域基礎設定（電腦端） */
         header {
             background-color: var(--primary-color);
             color: white;
-            padding: 1rem 1rem 1.2rem 1rem;
-            text-align: center;
+            padding: 1rem 1.5rem;
             position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: auto; /* 防超大字體撐破 */
         }
+        
         header h2 {
             margin: 0 0 8px 0;
-            padding-right: 90px;
-            text-align: left;
             font-size: 1.3rem;
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            gap: 10px;
+            white-space: nowrap; /* 強制不自動換行 */
         }
-        /* 標題旁顯示圓形圖示 */
+
+        /* 標題旁圖示 */
         .header-icon {
             width: 28px;
             height: 28px;
             border-radius: 50%;
             object-fit: cover;
+            flex-shrink: 0;
         }
+
         .admin-btn {
             position: absolute;
-            top: 12px;
-            right: 12px;
+            top: 15px;
+            right: 15px;
             background-color: #34495e;
             color: white;
             border: 1px solid #7f8c8d;
-            padding: 6px 10px;
+            padding: 6px 12px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.85rem;
             transition: background 0.3s;
             z-index: 10;
+            white-space: nowrap;
         }
         .admin-btn:hover {
             background-color: #4e6d8c;
         }
+
         .header-status-container {
-            text-align: left;
+            text-align: center;
         }
+
+        /* 平板裝置（螢幕寬度 768px 以下）：調整版面配置，往左對齊並保留右側按鈕空間 */
+        @media (max-width: 768px) {
+            header {
+                align-items: flex-start;
+                padding: 1rem 100px 1rem 1rem; /* 右側留出 100px 避免擋到後台按鈕 */
+            }
+            header h2 {
+                font-size: 1.1rem;
+                justify-content: flex-start;
+            }
+            .header-status-container {
+                text-align: left;
+            }
+        }
+
+        /* 手機裝置（螢幕寬度 480px 以下）：微調字級與邊距，維持單行靠左顯示 */
+        @media (max-width: 480px) {
+            header {
+                padding: 0.8rem 85px 0.8rem 0.8rem;
+            }
+            header h2 {
+                font-size: 0.95rem;
+                gap: 6px;
+            }
+            .header-icon {
+                width: 22px;
+                height: 22px;
+            }
+            .admin-btn {
+                top: 10px;
+                right: 8px;
+                padding: 5px 8px;
+                font-size: 0.75rem;
+            }
+        }
+
         .container {
             max-width: 600px;
             margin: 20px auto;
@@ -195,7 +244,7 @@
 <header>
     <h2>
         <img src="icon_earthquake.png" alt="圖示" class="header-icon">
-        地震緊急避難安全回報系統
+        <span>靜心高中災害避難狀況回報系統</span>
     </h2>
     <button class="admin-btn" id="adminHeaderBtn" onclick="requestAdminAccess()">進入後台</button>
     <div class="header-status-container">
@@ -317,7 +366,7 @@
 </div>
 
 <script>
-    // 將圖片即時動態裁切成圓形 Favicon（適用於流覽器頁籤）
+    // 將圖片即時動態裁切成圓形 Favicon
     window.addEventListener('DOMContentLoaded', () => {
         const img = new Image();
         img.src = 'icon_earthquake.png';
@@ -327,16 +376,13 @@
             canvas.height = 64;
             const ctx = canvas.getContext('2d');
 
-            // 繪製圓形遮罩
             ctx.beginPath();
             ctx.arc(32, 32, 32, 0, Math.PI * 2);
             ctx.closePath();
             ctx.clip();
 
-            // 將原圖片畫入圓形區域
             ctx.drawImage(img, 0, 0, 64, 64);
 
-            // 更新網頁 Favicon
             const link = document.getElementById('dynamicFavicon');
             link.href = canvas.toDataURL('image/png');
         };
