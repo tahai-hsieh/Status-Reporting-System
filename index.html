@@ -23,25 +23,23 @@
             color: white;
             padding: 1rem;
             text-align: center;
+            position: relative;
         }
-        .nav-tabs {
-            display: flex;
-            justify-content: center;
+        .admin-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
             background-color: #34495e;
-        }
-        .nav-tabs button {
-            background: none;
-            border: none;
             color: white;
-            padding: 12px 20px;
-            font-size: 1rem;
+            border: 1px solid #7f8c8d;
+            padding: 6px 12px;
+            border-radius: 4px;
             cursor: pointer;
-            width: 50%;
+            font-size: 0.85rem;
             transition: background 0.3s;
         }
-        .nav-tabs button.active {
-            background-color: var(--accent-color);
-            font-weight: bold;
+        .admin-btn:hover {
+            background-color: #4e6d8c;
         }
         .container {
             max-width: 600px;
@@ -51,10 +49,10 @@
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .tab-content {
+        .view-page {
             display: none;
         }
-        .tab-content.active {
+        .view-page.active {
             display: block;
         }
         .form-group {
@@ -92,10 +90,16 @@
             border-radius: 4px;
             font-size: 0.85rem;
             color: white;
-            margin-bottom: 10px;
+            margin-top: 5px;
         }
         .offline-status {
             background-color: #f39c12;
+        }
+
+        /* 表格容器與載具響應式設計 */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
         }
         table {
             width: 100%;
@@ -107,9 +111,29 @@
             padding: 8px;
             text-align: center;
         }
+        /* 表格標題：禁止自動換行與預設大小（電腦端） */
         th {
             background-color: #ecf0f1;
+            white-space: nowrap;
+            font-size: 1rem;
         }
+
+        /* 平板裝置（螢幕寬度 768px 以下） */
+        @media (max-width: 768px) {
+            th {
+                font-size: 0.9rem;
+                padding: 6px 4px;
+            }
+        }
+
+        /* 手機裝置（螢幕寬度 480px 以下） */
+        @media (max-width: 480px) {
+            th {
+                font-size: 0.8rem;
+                padding: 6px 2px;
+            }
+        }
+
         .summary-card {
             display: flex;
             justify-content: space-around;
@@ -126,27 +150,87 @@
             font-size: 1.5rem;
             font-weight: bold;
         }
+        .back-btn {
+            background-color: #7f8c8d;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        /* 備份資料複製備用顯示區 */
+        .backup-area {
+            display: none;
+            margin-top: 15px;
+            background: #f8f9fa;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .backup-area textarea {
+            height: 120px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
 
 <header>
     <h2>地震緊急避難安全回報系統</h2>
-    <div class="status-badge offline-status" id="connectionStatus">離線模式運作中</div>
+    <button class="admin-btn" id="adminHeaderBtn" onclick="requestAdminAccess()">進入後台</button>
+    <div>
+        <div class="status-badge offline-status" id="connectionStatus">離線模式運作中</div>
+    </div>
 </header>
 
-<div class="nav-tabs">
-    <button id="tabUserBtn" class="active" onclick="switchTab('userTab')">副班長回報端</button>
-    <button id="tabAdminBtn" onclick="switchTab('adminTab')">後台總指揮端</button>
-</div>
-
-<!-- 使用者端（副班長） -->
-<div id="userTab" class="container tab-content active">
+<!-- 使用者端（副班長回報頁面） -->
+<div id="userPage" class="container view-page active">
     <h3>各班狀況回報表單</h3>
     <form id="reportForm">
         <div class="form-group">
             <label for="className">班級名稱</label>
-            <input type="text" id="className" placeholder="例如：一年一班" required>
+            <select id="className" required>
+                <option value="" disabled selected>請選擇班級</option>
+                <!-- 七年級 -->
+                <option value="七年忠班">七年忠班</option>
+                <option value="七年孝班">七年孝班</option>
+                <option value="七年仁班">七年仁班</option>
+                <option value="七年愛班">七年愛班</option>
+                <option value="七年信班">七年信班</option>
+                <option value="七年義班">七年義班</option>
+                <!-- 八年級 -->
+                <option value="八年忠班">八年忠班</option>
+                <option value="八年孝班">八年孝班</option>
+                <option value="八年仁班">八年仁班</option>
+                <option value="八年愛班">八年愛班</option>
+                <option value="八年信班">八年信班</option>
+                <option value="八年義班">八年義班</option>
+                <!-- 九年級 -->
+                <option value="九年忠班">九年忠班</option>
+                <option value="九年孝班">九年孝班</option>
+                <option value="九年仁班">九年仁班</option>
+                <option value="九年愛班">九年愛班</option>
+                <option value="九年信班">九年信班</option>
+                <option value="九年義班">九年義班</option>
+                <!-- 十年級 -->
+                <option value="十年誠班">十年誠班</option>
+                <option value="十年愛班">十年愛班</option>
+                <option value="十年熱班">十年熱班</option>
+                <option value="十年智班">十年智班</option>
+                <!-- 十一年級 -->
+                <option value="十一年誠班">十一年誠班</option>
+                <option value="十一年愛班">十一年愛班</option>
+                <option value="十一年熱班">十一年熱班</option>
+                <option value="十一年智班">十一年智班</option>
+                <!-- 十二年級 -->
+                <option value="十二年誠班">十二年誠班</option>
+                <option value="十二年愛班">十二年愛班</option>
+                <option value="十二年熱班">十二年熱班</option>
+                <option value="十二年智班">十二年智班</option>
+            </select>
         </div>
         <div class="form-group">
             <label for="reporterName">回報人（副班長）</label>
@@ -172,8 +256,9 @@
     </form>
 </div>
 
-<!-- 後台端（總指揮） -->
-<div id="adminTab" class="container tab-content">
+<!-- 後台端（總指揮總覽頁面） -->
+<div id="adminPage" class="container view-page">
+    <button class="back-btn" onclick="showUserPage()">← 返回副班長回報端</button>
     <h3>後台總覽與統計</h3>
     
     <div class="summary-card">
@@ -192,38 +277,74 @@
     </div>
 
     <button onclick="exportData()" class="btn-submit" style="margin-bottom: 10px; background-color: #3498db;">匯出 JSON 備份檔</button>
-    <button onclick="clearData()" class="btn-submit btn-danger">清空所有儲存資料</button>
+    
+    <!-- 備份文字複製區（若下載被阻止時使用） -->
+    <div id="backupArea" class="backup-area">
+        <label>備份資料文字（可全選複製備份）：</label>
+        <textarea id="backupText" readonly></textarea>
+        <button onclick="copyBackupText()" class="btn-submit" style="margin-top: 5px; background-color: #27ae60;">複製到剪貼簿</button>
+    </div>
+
+    <button onclick="clearData()" class="btn-submit btn-danger" style="margin-top: 10px;">清空所有儲存資料</button>
 
     <h4>已回報班級明細</h4>
-    <table>
-        <thead>
-            <tr>
-                <th>班級</th>
-                <th>回報人</th>
-                <th>平安</th>
-                <th>受傷</th>
-                <th>失聯</th>
-                <th>時間</th>
-            </tr>
-        </thead>
-        <tbody id="reportTableBody">
-            <!-- 動態加入資料 -->
-        </tbody>
-    </table>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>班級</th>
+                    <th>回報人</th>
+                    <th>平安</th>
+                    <th>受傷</th>
+                    <th>失聯</th>
+                    <th>時間</th>
+                </tr>
+            </thead>
+            <tbody id="reportTableBody">
+                <!-- 動態加入資料 -->
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script>
-    // 頁面切換 logic
-    function switchTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-        document.querySelectorAll('.nav-tabs button').forEach(btn => btn.classList.remove('active'));
+    // 檢查 URL 參數或按鈕進入後台
+    window.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('mode') === 'admin') {
+            requestAdminAccess();
+        }
+    });
+
+    // 請求進入後台（密碼驗證）
+    function requestAdminAccess() {
+        const password = prompt("請輸入後台管理密碼：");
+        if (password === "3118") {
+            showAdminPage();
+        } else if (password !== null) {
+            alert("密碼錯誤，無法進入後台！");
+            showUserPage();
+        }
+    }
+
+    // 顯示後台頁面
+    function showAdminPage() {
+        document.getElementById('userPage').classList.remove('active');
+        document.getElementById('adminPage').classList.add('active');
+        document.getElementById('adminHeaderBtn').style.display = 'none';
+        renderAdminDashboard();
+    }
+
+    // 顯示使用者頁面
+    function showUserPage() {
+        document.getElementById('adminPage').classList.remove('active');
+        document.getElementById('userPage').classList.add('active');
+        document.getElementById('adminHeaderBtn').style.display = 'block';
         
-        document.getElementById(tabId).classList.add('active');
-        if (tabId === 'userTab') {
-            document.getElementById('tabUserBtn').classList.add('active');
-        } else {
-            document.getElementById('tabAdminBtn').classList.add('active');
-            renderAdminDashboard();
+        // 清除網址上的 mode=admin 參數，保持 URL 整潔
+        if (window.location.search.includes('mode=admin')) {
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
         }
     }
 
@@ -291,7 +412,7 @@
         document.getElementById('totalMissing').innerText = totalMissing;
     }
 
-    // 輔助函式：防 HTML 注入
+    // 防 HTML 注入
     function escapeHtml(text) {
         return text.replace(/[&<>"']/g, function(m) {
             return {
@@ -304,22 +425,55 @@
         });
     }
 
-    // 資料匯出機制
+    // 資料匯出機制（包含自動觸發下載與顯示複製文字備用）
     function exportData() {
         const reports = getReports();
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(reports, null, 2));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `避難安全回報備份_${new Date().toISOString().slice(0,10)}.json`);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
+        if (reports.length === 0) {
+            alert("目前沒有任何回報資料可供匯出！");
+            return;
+        }
+
+        const jsonString = JSON.stringify(reports, null, 2);
+        
+        // 顯示文字複製備用區
+        const backupArea = document.getElementById('backupArea');
+        const backupText = document.getElementById('backupText');
+        backupText.value = jsonString;
+        backupArea.style.display = 'block';
+
+        // 嘗試自動觸發瀏覽器下載
+        try {
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.href = url;
+            downloadAnchor.download = `避難安全回報備份_${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            document.body.removeChild(downloadAnchor);
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            console.error("下載檔案受阻，請使用下方複製文字按鈕。");
+        }
+    }
+
+    // 複製文字功能
+    function copyBackupText() {
+        const backupText = document.getElementById('backupText');
+        backupText.select();
+        backupText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(backupText.value).then(() => {
+            alert('已成功將備份資料複製到剪貼簿！');
+        }).catch(() => {
+            alert('複製失敗，請手動全選下方文字框進行複製。');
+        });
     }
 
     // 清除資料
     function clearData() {
         if (confirm("確定要清除所有已回報的歷史資料嗎？")) {
             localStorage.removeItem('disaster_reports');
+            document.getElementById('backupArea').style.display = 'none';
             renderAdminDashboard();
         }
     }
