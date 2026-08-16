@@ -6,15 +6,16 @@
     <!-- 網頁名稱設定 -->
     <title>靜心高中災害避難狀況回報系統</title>
 
-    <!-- iOS Safari 專用主畫面圖示（絕對路徑） -->
+    <!-- 主畫面圖示 (iOS Safari 專用) -->
+    <link rel="apple-touch-icon" href="icon_earthquake.png">
+    <link rel="apple-touch-icon-precomposed" href="icon_earthquake.png">
     <link rel="apple-touch-icon" href="https://tahai-hsieh.github.io/Status-Report/icon_earthquake.png">
-    <link rel="apple-touch-icon-precomposed" href="https://tahai-hsieh.github.io/Status-Report/icon_earthquake.png">
     <link rel="icon" type="image/png" sizes="192x192" href="icon_earthquake.png">
 
     <!-- 網頁分頁圖案（Favicon 圓形設定） -->
     <link rel="icon" type="image/png" id="dynamicFavicon" href="icon_earthquake.png">
 
-    <!-- PWA Web App Manifest (動態嵌入，支援 Chrome/Android 加入主畫面) -->
+    <!-- PWA Manifest 設定（強制設定完整名稱與主畫面圖示） -->
     <link rel="manifest" id="manifestPlaceholder">
 
     <style>
@@ -381,24 +382,26 @@
 </div>
 
 <script>
-    // 動態產生 PWA Manifest，讓所有瀏覽器（含 Chrome/Android）抓取完整圖示
+    // 動態產生 Manifest，名稱一律維持為全名「靜心高中災害避難狀況回報系統」
     const manifestData = {
         "name": "靜心高中災害避難狀況回報系統",
-        "short_name": "避難回報",
+        "short_name": "靜心高中災害避難狀況回報系統",
         "start_url": "./",
         "display": "standalone",
-        "background_color": "#ffffff",
+        "background_color": "#2c3e50",
         "theme_color": "#2c3e50",
         "icons": [
             {
                 "src": "icon_earthquake.png",
                 "sizes": "192x192",
-                "type": "image/png"
+                "type": "image/png",
+                "purpose": "any maskable"
             },
             {
-                "src": "icon_earthquake.png",
+                "src": "https://tahai-hsieh.github.io/Status-Report/icon_earthquake.png",
                 "sizes": "512x512",
-                "type": "image/png"
+                "type": "image/png",
+                "purpose": "any maskable"
             }
         ]
     };
@@ -407,7 +410,7 @@
     const manifestURL = URL.createObjectURL(blob);
     document.getElementById('manifestPlaceholder').setAttribute('href', manifestURL);
 
-    // 將圖片即時動態裁切成圓形 Favicon（適用於網頁頁籤）
+    // 將圖片即時動態裁切成圓形 Favicon（適用於瀏覽器頁籤）
     window.addEventListener('DOMContentLoaded', () => {
         const img = new Image();
         img.src = 'icon_earthquake.png';
