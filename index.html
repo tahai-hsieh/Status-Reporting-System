@@ -6,13 +6,16 @@
     <!-- 網頁名稱設定 -->
     <title>靜心高中災害避難狀況回報系統</title>
 
-    <!-- 主畫面圖示（寫入絕對路徑以確保 iOS Safari 抓取成功） -->
+    <!-- iOS Safari 專用主畫面圖示（絕對路徑） -->
     <link rel="apple-touch-icon" href="https://tahai-hsieh.github.io/Status-Report/icon_earthquake.png">
     <link rel="apple-touch-icon-precomposed" href="https://tahai-hsieh.github.io/Status-Report/icon_earthquake.png">
     <link rel="icon" type="image/png" sizes="192x192" href="icon_earthquake.png">
 
     <!-- 網頁分頁圖案（Favicon 圓形設定） -->
     <link rel="icon" type="image/png" id="dynamicFavicon" href="icon_earthquake.png">
+
+    <!-- PWA Web App Manifest (動態嵌入，支援 Chrome/Android 加入主畫面) -->
+    <link rel="manifest" id="manifestPlaceholder">
 
     <style>
         :root {
@@ -378,7 +381,33 @@
 </div>
 
 <script>
-    // 將圖片即時動態裁切成圓形 Favicon
+    // 動態產生 PWA Manifest，讓所有瀏覽器（含 Chrome/Android）抓取完整圖示
+    const manifestData = {
+        "name": "靜心高中災害避難狀況回報系統",
+        "short_name": "避難回報",
+        "start_url": "./",
+        "display": "standalone",
+        "background_color": "#ffffff",
+        "theme_color": "#2c3e50",
+        "icons": [
+            {
+                "src": "icon_earthquake.png",
+                "sizes": "192x192",
+                "type": "image/png"
+            },
+            {
+                "src": "icon_earthquake.png",
+                "sizes": "512x512",
+                "type": "image/png"
+            }
+        ]
+    };
+    const stringManifest = JSON.stringify(manifestData);
+    const blob = new Blob([stringManifest], {type: 'application/json'});
+    const manifestURL = URL.createObjectURL(blob);
+    document.getElementById('manifestPlaceholder').setAttribute('href', manifestURL);
+
+    // 將圖片即時動態裁切成圓形 Favicon（適用於網頁頁籤）
     window.addEventListener('DOMContentLoaded', () => {
         const img = new Image();
         img.src = 'icon_earthquake.png';
@@ -479,11 +508,10 @@
         const reports = getReports();
         const isDuplicate = reports.some(r => r.className === className);
 
-        // 若班級已有資料，跳出確認提示框
         if (isDuplicate) {
             const confirmUpdate = confirm(`該班級（${className}）已有資料，是否要更新資料？`);
             if (!confirmUpdate) {
-                return; // 使用者點擊取消，中斷提交
+                return;
             }
         }
         
