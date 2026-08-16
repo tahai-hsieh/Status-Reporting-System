@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 網頁名稱設定 -->
     <title>靜心高中災害避難狀況回報系統</title>
 
     <!-- 主畫面圖示 (iOS Safari 專用) -->
@@ -466,7 +467,7 @@
     </div>
 </div>
 
-<!-- 載入 Firebase SDK (v8 輕量相容版) -->
+<!-- 載入 Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -481,7 +482,6 @@
         firebase.initializeApp(firebaseConfig);
         dbRef = firebase.database().ref('disaster_reports');
         
-        // 監聽連線狀態
         firebase.database().ref(".info/connected").on("value", (snap) => {
             const statusEl = document.getElementById("connectionStatus");
             if (snap.val() === true) {
@@ -493,7 +493,6 @@
             }
         });
 
-        // 雲端即時同步：當雲端有數據變化時自動更新本地後台表格
         dbRef.on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
@@ -503,7 +502,7 @@
             }
         });
     } catch (e) {
-        console.warn("Firebase 初始化失敗，切換為全純離線模式", e);
+        console.warn("Firebase 初始化失敗，切換為純離線模式", e);
     }
 
     // 動態 Manifest
@@ -561,7 +560,6 @@
         }
     });
 
-    // 全校完整班級清單
     const allGradeClasses = [
         "七年忠班", "七年孝班", "七年仁班", "七年愛班", "七年信班", "七年義班",
         "八年忠班", "八年孝班", "八年仁班", "八年愛班", "八年信班", "八年義班",
@@ -605,7 +603,6 @@
     }
 
     function saveReport(data) {
-        // 1. 本地 LocalStorage 儲存
         const reports = getReports();
         const existingIndex = reports.findIndex(r => r.className === data.className);
         
@@ -616,25 +613,47 @@
         }
         localStorage.setItem('disaster_reports', JSON.stringify(reports));
 
-        // 2. 雲端 Firebase 自動同步 (若有連網)
         if (dbRef) {
             dbRef.child(data.className).set(data).catch(err => {
-                console.log("離線中，資料已寫入本機，連網時將自動上傳。");
+                console.log("離線中，資料已寫入本機。");
             });
         }
     }
 
-    function exportSingleClassJSON(reportData) {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify([reportData], null, 2));
+    // 觸發原生分享 / 直接下載檔案
+    async function exportSingleClassJSON(reportData) {
+        const fileName = `${reportData.className}_避難回報.json`;
+        const jsonText = JSON.stringify([reportData], null, 2);
+        const blob = new Blob([jsonText], { type: 'application/json' });
+
+        // 1. 優先使用原生 Web Share API (直接跳出 iOS 選單，可用 AirDrop 或儲存檔案)
+        if (navigator.share && navigator.canShare) {
+            const file = new File([blob], fileName, { type: 'application/json' });
+            if (navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        title: `${reportData.className} 避難狀況回報`,
+                        files: [file]
+                    });
+                    return;
+                } catch (err) {
+                    console.log("使用者取消分享或傳輸中斷");
+                }
+            }
+        }
+
+        // 2. 備用標準下載（適用於傳統瀏覽器/電腦）
+        const dataStr = URL.createObjectURL(blob);
         const downloadAnchor = document.createElement('a');
         downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `${reportData.className}_避難回報.json`);
+        downloadAnchor.setAttribute("download", fileName);
         document.body.appendChild(downloadAnchor);
         downloadAnchor.click();
         downloadAnchor.remove();
+        URL.revokeObjectURL(dataStr);
     }
 
-    document.getElementById('reportForm').addEventListener('submit', function(e) {
+    document.getElementById('reportForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const className = document.getElementById('className').value;
@@ -661,9 +680,9 @@
         };
 
         saveReport(reportData);
-        exportSingleClassJSON(reportData);
-
-        alert('回報已成功提交，JSON備份檔已自動下載！無網狀態下請將該檔案傳給學務主任。');
+        alert('回報已順利提交！請在接下來跳出的選單中選擇 AirDrop 傳給學務主任，或選擇「儲存到檔案」。');
+        
+        await exportSingleClassJSON(reportData);
         this.reset();
     });
 
