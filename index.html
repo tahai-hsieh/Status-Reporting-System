@@ -21,25 +21,35 @@
         header {
             background-color: var(--primary-color);
             color: white;
-            padding: 1rem;
+            padding: 1rem 1rem 1.2rem 1rem;
             text-align: center;
             position: relative;
         }
+        header h2 {
+            margin: 0 0 8px 0;
+            padding-right: 90px; /* 留出空間給右上角按鈕，避免重疊 */
+            text-align: left;
+            font-size: 1.3rem;
+        }
         .admin-btn {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: 12px;
+            right: 12px;
             background-color: #34495e;
             color: white;
             border: 1px solid #7f8c8d;
-            padding: 6px 12px;
+            padding: 6px 10px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.85rem;
             transition: background 0.3s;
+            z-index: 10;
         }
         .admin-btn:hover {
             background-color: #4e6d8c;
+        }
+        .header-status-container {
+            text-align: left;
         }
         .container {
             max-width: 600px;
@@ -90,7 +100,6 @@
             border-radius: 4px;
             font-size: 0.85rem;
             color: white;
-            margin-top: 5px;
         }
         .offline-status {
             background-color: #f39c12;
@@ -159,20 +168,9 @@
             cursor: pointer;
             margin-bottom: 15px;
         }
-
-        /* 備份資料複製備用顯示區 */
-        .backup-area {
-            display: none;
-            margin-top: 15px;
-            background: #f8f9fa;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        .backup-area textarea {
-            height: 120px;
-            font-family: monospace;
-            font-size: 0.85rem;
+        .unreported-row {
+            color: #95a5a6;
+            background-color: #fafafa;
         }
     </style>
 </head>
@@ -181,7 +179,7 @@
 <header>
     <h2>地震緊急避難安全回報系統</h2>
     <button class="admin-btn" id="adminHeaderBtn" onclick="requestAdminAccess()">進入後台</button>
-    <div>
+    <div class="header-status-container">
         <div class="status-badge offline-status" id="connectionStatus">離線模式運作中</div>
     </div>
 </header>
@@ -277,17 +275,9 @@
     </div>
 
     <button onclick="exportData()" class="btn-submit" style="margin-bottom: 10px; background-color: #3498db;">匯出 JSON 備份檔</button>
-    
-    <!-- 備份文字複製區（若下載被阻止時使用） -->
-    <div id="backupArea" class="backup-area">
-        <label>備份資料文字（可全選複製備份）：</label>
-        <textarea id="backupText" readonly></textarea>
-        <button onclick="copyBackupText()" class="btn-submit" style="margin-top: 5px; background-color: #27ae60;">複製到剪貼簿</button>
-    </div>
+    <button onclick="clearData()" class="btn-submit btn-danger">清空所有儲存資料</button>
 
-    <button onclick="clearData()" class="btn-submit btn-danger" style="margin-top: 10px;">清空所有儲存資料</button>
-
-    <h4>已回報班級明細</h4>
+    <h4>全校各班回報狀態明細</h4>
     <div class="table-wrapper">
         <table>
             <thead>
@@ -308,6 +298,22 @@
 </div>
 
 <script>
+    // 全校完整班級清單清單
+    const allGradeClasses = [
+        // 七年級
+        "七年忠班", "七年孝班", "七年仁班", "七年愛班", "七年信班", "七年義班",
+        // 八年級
+        "八年忠班", "八年孝班", "八年仁班", "八年愛班", "八年信班", "八年義班",
+        // 九年級
+        "九年忠班", "九年孝班", "九年仁班", "九年愛班", "九年信班", "九年義班",
+        // 十年級
+        "十年誠班", "十年愛班", "十年熱班", "十年智班",
+        // 十一年級
+        "十一年誠班", "十一年愛班", "十一年熱班", "十一年智班",
+        // 十二年級
+        "十二年誠班", "十二年愛班", "十二年熱班", "十二年智班"
+    ];
+
     // 檢查 URL 參數或按鈕進入後台
     window.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -356,7 +362,15 @@
 
     function saveReport(data) {
         const reports = getReports();
-        reports.push(data);
+        
+        // 如果同個班級重複回報，直接更新最新數據
+        const existingIndex = reports.findIndex(r => r.className === data.className);
+        if (existingIndex !== -1) {
+            reports[existingIndex] = data;
+        } else {
+            reports.push(data);
+        }
+        
         localStorage.setItem('disaster_reports', JSON.stringify(reports));
     }
 
@@ -380,30 +394,48 @@
         this.reset();
     });
 
-    // 渲染後台資料
+    // 渲染後台資料（列出全校所有班級）
     function renderAdminDashboard() {
         const reports = getReports();
         const tbody = document.getElementById('reportTableBody');
         tbody.innerHTML = '';
 
+        // 轉換為字典方便迅速查尋
+        const reportMap = {};
+        reports.forEach(r => {
+            reportMap[r.className] = r;
+        });
+
         let totalSafe = 0;
         let totalInjured = 0;
         let totalMissing = 0;
 
-        reports.forEach(report => {
-            totalSafe += report.safeCount;
-            totalInjured += report.injuredCount;
-            totalMissing += report.missingCount;
-
+        // 逐一遍歷全校所有班級
+        allGradeClasses.forEach(className => {
             const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${escapeHtml(report.className)}</td>
-                <td>${escapeHtml(report.reporterName)}</td>
-                <td>${report.safeCount}</td>
-                <td>${report.injuredCount}</td>
-                <td>${report.missingCount}</td>
-                <td>${report.timestamp}</td>
-            `;
+            
+            if (reportMap[className]) {
+                const report = reportMap[className];
+                totalSafe += report.safeCount;
+                totalInjured += report.injuredCount;
+                totalMissing += report.missingCount;
+
+                tr.innerHTML = `
+                    <td><strong>${escapeHtml(report.className)}</strong></td>
+                    <td>${escapeHtml(report.reporterName)}</td>
+                    <td>${report.safeCount}</td>
+                    <td>${report.injuredCount}</td>
+                    <td>${report.missingCount}</td>
+                    <td>${report.timestamp}</td>
+                `;
+            } else {
+                // 尚未回報的班級
+                tr.classList.add('unreported-row');
+                tr.innerHTML = `
+                    <td>${className}</td>
+                    <td colspan="5"><em>未回報</em></td>
+                `;
+            }
             tbody.appendChild(tr);
         });
 
@@ -425,55 +457,22 @@
         });
     }
 
-    // 資料匯出機制（包含自動觸發下載與顯示複製文字備用）
+    // 資料匯出機制
     function exportData() {
         const reports = getReports();
-        if (reports.length === 0) {
-            alert("目前沒有任何回報資料可供匯出！");
-            return;
-        }
-
-        const jsonString = JSON.stringify(reports, null, 2);
-        
-        // 顯示文字複製備用區
-        const backupArea = document.getElementById('backupArea');
-        const backupText = document.getElementById('backupText');
-        backupText.value = jsonString;
-        backupArea.style.display = 'block';
-
-        // 嘗試自動觸發瀏覽器下載
-        try {
-            const blob = new Blob([jsonString], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.href = url;
-            downloadAnchor.download = `避難安全回報備份_${new Date().toISOString().slice(0,10)}.json`;
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            document.body.removeChild(downloadAnchor);
-            URL.revokeObjectURL(url);
-        } catch (e) {
-            console.error("下載檔案受阻，請使用下方複製文字按鈕。");
-        }
-    }
-
-    // 複製文字功能
-    function copyBackupText() {
-        const backupText = document.getElementById('backupText');
-        backupText.select();
-        backupText.setSelectionRange(0, 99999);
-        navigator.clipboard.writeText(backupText.value).then(() => {
-            alert('已成功將備份資料複製到剪貼簿！');
-        }).catch(() => {
-            alert('複製失敗，請手動全選下方文字框進行複製。');
-        });
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(reports, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `避難安全回報備份_${new Date().toISOString().slice(0,10)}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
     }
 
     // 清除資料
     function clearData() {
         if (confirm("確定要清除所有已回報的歷史資料嗎？")) {
             localStorage.removeItem('disaster_reports');
-            document.getElementById('backupArea').style.display = 'none';
             renderAdminDashboard();
         }
     }
