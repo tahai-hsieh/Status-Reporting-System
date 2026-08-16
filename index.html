@@ -3,7 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>地震緊急避難 - 安全回報系統 (離線版)</title>
+    <!-- 網頁名稱設定 -->
+    <title>靜心高中災害避難狀況回報系統</title>
+
+    <!-- 主畫面圖示（加入手機主畫面時保持原圖） -->
+    <link rel="apple-touch-icon" href="icon_earthquake.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon_earthquake.png">
+
+    <!-- 網頁分頁圖案（Favicon 圓形設定） -->
+    <link rel="icon" type="image/png" id="dynamicFavicon" href="icon_earthquake.png">
+
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -27,9 +36,19 @@
         }
         header h2 {
             margin: 0 0 8px 0;
-            padding-right: 90px; /* 留出空間給右上角按鈕，避免重疊 */
+            padding-right: 90px;
             text-align: left;
             font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        /* 標題旁顯示圓形圖示 */
+        .header-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
         }
         .admin-btn {
             position: absolute;
@@ -120,14 +139,12 @@
             padding: 8px;
             text-align: center;
         }
-        /* 表格標題：禁止自動換行與預設大小（電腦端） */
         th {
             background-color: #ecf0f1;
             white-space: nowrap;
             font-size: 1rem;
         }
 
-        /* 平板裝置（螢幕寬度 768px 以下） */
         @media (max-width: 768px) {
             th {
                 font-size: 0.9rem;
@@ -135,7 +152,6 @@
             }
         }
 
-        /* 手機裝置（螢幕寬度 480px 以下） */
         @media (max-width: 480px) {
             th {
                 font-size: 0.8rem;
@@ -177,7 +193,10 @@
 <body>
 
 <header>
-    <h2>地震緊急避難安全回報系統</h2>
+    <h2>
+        <img src="icon_earthquake.png" alt="圖示" class="header-icon">
+        地震緊急避難安全回報系統
+    </h2>
     <button class="admin-btn" id="adminHeaderBtn" onclick="requestAdminAccess()">進入後台</button>
     <div class="header-status-container">
         <div class="status-badge offline-status" id="connectionStatus">離線模式運作中</div>
@@ -298,7 +317,37 @@
 </div>
 
 <script>
-    // 全校完整班級清單清單
+    // 將圖片即時動態裁切成圓形 Favicon（適用於流覽器頁籤）
+    window.addEventListener('DOMContentLoaded', () => {
+        const img = new Image();
+        img.src = 'icon_earthquake.png';
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+
+            // 繪製圓形遮罩
+            ctx.beginPath();
+            ctx.arc(32, 32, 32, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.clip();
+
+            // 將原圖片畫入圓形區域
+            ctx.drawImage(img, 0, 0, 64, 64);
+
+            // 更新網頁 Favicon
+            const link = document.getElementById('dynamicFavicon');
+            link.href = canvas.toDataURL('image/png');
+        };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('mode') === 'admin') {
+            requestAdminAccess();
+        }
+    });
+
+    // 全校完整班級清單
     const allGradeClasses = [
         // 七年級
         "七年忠班", "七年孝班", "七年仁班", "七年愛班", "七年信班", "七年義班",
@@ -313,14 +362,6 @@
         // 十二年級
         "十二年誠班", "十二年愛班", "十二年熱班", "十二年智班"
     ];
-
-    // 檢查 URL 參數或按鈕進入後台
-    window.addEventListener('DOMContentLoaded', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('mode') === 'admin') {
-            requestAdminAccess();
-        }
-    });
 
     // 請求進入後台（密碼驗證）
     function requestAdminAccess() {
@@ -347,7 +388,6 @@
         document.getElementById('userPage').classList.add('active');
         document.getElementById('adminHeaderBtn').style.display = 'block';
         
-        // 清除網址上的 mode=admin 參數，保持 URL 整潔
         if (window.location.search.includes('mode=admin')) {
             const newUrl = window.location.pathname;
             window.history.replaceState({}, document.title, newUrl);
@@ -363,7 +403,6 @@
     function saveReport(data) {
         const reports = getReports();
         
-        // 如果同個班級重複回報，直接更新最新數據
         const existingIndex = reports.findIndex(r => r.className === data.className);
         if (existingIndex !== -1) {
             reports[existingIndex] = data;
@@ -394,13 +433,12 @@
         this.reset();
     });
 
-    // 渲染後台資料（列出全校所有班級）
+    // 渲染後台資料
     function renderAdminDashboard() {
         const reports = getReports();
         const tbody = document.getElementById('reportTableBody');
         tbody.innerHTML = '';
 
-        // 轉換為字典方便迅速查尋
         const reportMap = {};
         reports.forEach(r => {
             reportMap[r.className] = r;
@@ -410,7 +448,6 @@
         let totalInjured = 0;
         let totalMissing = 0;
 
-        // 逐一遍歷全校所有班級
         allGradeClasses.forEach(className => {
             const tr = document.createElement('tr');
             
@@ -429,7 +466,6 @@
                     <td>${report.timestamp}</td>
                 `;
             } else {
-                // 尚未回報的班級
                 tr.classList.add('unreported-row');
                 tr.innerHTML = `
                     <td>${className}</td>
@@ -469,11 +505,17 @@
         downloadAnchor.remove();
     }
 
-    // 清除資料
+    // 清除資料（密碼驗證）
     function clearData() {
-        if (confirm("確定要清除所有已回報的歷史資料嗎？")) {
-            localStorage.removeItem('disaster_reports');
-            renderAdminDashboard();
+        const password = prompt("清除資料屬於高風險操作，請輸入管理密碼確認：");
+        if (password === "3118") {
+            if (confirm("密碼正確，確定要清空所有已回報的歷史資料嗎？此操作無法復原！")) {
+                localStorage.removeItem('disaster_reports');
+                renderAdminDashboard();
+                alert("已成功清空所有資料！");
+            }
+        } else if (password !== null) {
+            alert("密碼錯誤，無法清除資料！");
         }
     }
 </script>
