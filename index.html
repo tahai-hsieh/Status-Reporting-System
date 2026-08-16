@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 網頁名稱設定 -->
     <title>靜心高中災害避難狀況回報系統</title>
 
     <!-- 主畫面圖示 (iOS Safari 專用) -->
@@ -244,7 +243,6 @@
             background-color: #fafafa;
         }
         
-        /* 可點擊班級樣式 */
         .clickable-class {
             color: #2980b9;
             text-decoration: underline;
@@ -255,7 +253,6 @@
             color: #3498db;
         }
 
-        /* Modal 詳情彈窗樣式 */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -422,6 +419,8 @@
     </div>
 
     <button onclick="exportData()" class="btn-submit" style="margin-bottom: 10px; background-color: #3498db;">匯出 JSON 備份檔</button>
+    <button onclick="document.getElementById('importFileInput').click()" class="btn-submit" style="margin-bottom: 10px; background-color: #27ae60;">匯入 JSON 資料檔</button>
+    <input type="file" id="importFileInput" accept=".json" style="display: none;" onchange="importData(event)">
     <button onclick="clearData()" class="btn-submit btn-danger">清空所有儲存資料</button>
 
     <h4>全校各班回報狀態明細</h4>
@@ -465,7 +464,15 @@
 </div>
 
 <script>
-    // 動態產生 Manifest
+    // 建立廣播頻道（同網路多分頁/多視窗自動廣播同步）
+    const syncChannel = new BroadcastChannel('disaster_sync_channel');
+    syncChannel.onmessage = (event) => {
+        if (event.data && event.data.type === 'NEW_REPORT') {
+            renderAdminDashboard();
+        }
+    };
+
+    // 動態 Manifest
     const manifestData = {
         "name": "靜心高中災害避難狀況回報系統",
         "short_name": "靜心高中災害避難狀況回報系統",
@@ -574,6 +581,8 @@
         }
         
         localStorage.setItem('disaster_reports', JSON.stringify(reports));
+        // 廣播更新通知
+        syncChannel.postMessage({ type: 'NEW_REPORT' });
     }
 
     document.getElementById('reportForm').addEventListener('submit', function(e) {
@@ -657,7 +666,6 @@
         document.getElementById('totalMissing').innerText = totalMissing;
     }
 
-    // 開啟並帶入班級詳細資料 Modal
     function openModal(className) {
         const reports = getReports();
         const report = reports.find(r => r.className === className);
@@ -675,12 +683,10 @@
         document.getElementById('detailModal').classList.add('active');
     }
 
-    // 關閉 Modal
     function closeModal() {
         document.getElementById('detailModal').classList.remove('active');
     }
 
-    // 點擊彈窗外部背景自動關閉
     window.addEventListener('click', (e) => {
         const modal = document.getElementById('detailModal');
         if (e.target === modal) {
@@ -709,6 +715,47 @@
         document.body.appendChild(downloadAnchor);
         downloadAnchor.click();
         downloadAnchor.remove();
+    }
+
+    // 匯入 JSON 資料檔機制
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedReports = JSON.parse(e.target.result);
+                if (!Array.isArray(importedReports)) {
+                    alert("匯入失敗：檔案格式不符合！");
+                    return;
+                }
+
+                const currentReports = getReports();
+                let importedCount = 0;
+
+                importedReports.forEach(newReport => {
+                    if (newReport.className) {
+                        const existingIndex = currentReports.findIndex(r => r.className === newReport.className);
+                        if (existingIndex !== -1) {
+                            currentReports[existingIndex] = newReport;
+                        } else {
+                            currentReports.push(newReport);
+                        }
+                        importedCount++;
+                    }
+                });
+
+                localStorage.setItem('disaster_reports', JSON.stringify(currentReports));
+                renderAdminDashboard();
+                alert(`成功匯入/更新 ${importedCount} 個班級的資料！`);
+            } catch (err) {
+                alert("讀取檔案失敗，請確認檔案是否為正確的 JSON 備份檔。");
+            }
+            // 重置檔案選取器
+            event.target.value = '';
+        };
+        reader.readAsText(file);
     }
 
     function clearData() {
