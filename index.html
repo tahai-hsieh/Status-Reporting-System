@@ -15,7 +15,7 @@
     <!-- 網頁分頁圖案（Favicon 圓形設定） -->
     <link rel="icon" type="image/png" id="dynamicFavicon" href="icon_earthquake.png">
 
-    <!-- PWA Manifest 設定（強制設定完整名稱與主畫面圖示） -->
+    <!-- PWA Manifest 設定 -->
     <link rel="manifest" id="manifestPlaceholder">
 
     <style>
@@ -33,7 +33,6 @@
             color: #333;
         }
         
-        /* 標題區域基礎設定（電腦端） */
         header {
             background-color: var(--primary-color);
             color: white;
@@ -56,7 +55,6 @@
             white-space: nowrap;
         }
 
-        /* 標題旁圖示 */
         .header-icon {
             width: 28px;
             height: 28px;
@@ -88,7 +86,6 @@
             text-align: center;
         }
 
-        /* 平板裝置（螢幕寬度 768px 以下） */
         @media (max-width: 768px) {
             header {
                 align-items: flex-start;
@@ -103,7 +100,6 @@
             }
         }
 
-        /* 手機裝置（螢幕寬度 480px 以下） */
         @media (max-width: 480px) {
             header {
                 padding: 0.8rem 85px 0.8rem 0.8rem;
@@ -146,7 +142,6 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        /* 紅色小米字號 */
         .required-asterisk {
             color: var(--danger-color);
             font-size: 0.85em;
@@ -185,7 +180,6 @@
             background-color: #f39c12;
         }
 
-        /* 表格容器與載具響應式設計 */
         .table-wrapper {
             width: 100%;
             overflow-x: auto;
@@ -248,6 +242,75 @@
         .unreported-row {
             color: #95a5a6;
             background-color: #fafafa;
+        }
+        
+        /* 可點擊班級樣式 */
+        .clickable-class {
+            color: #2980b9;
+            text-decoration: underline;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .clickable-class:hover {
+            color: #3498db;
+        }
+
+        /* Modal 詳情彈窗樣式 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-card {
+            background: white;
+            width: 90%;
+            max-width: 450px;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .modal-header h3 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+        .modal-close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+        .modal-body p {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+        .modal-note-box {
+            background: #f8f9fa;
+            border-left: 4px solid var(--accent-color);
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            word-break: break-all;
+            white-space: pre-wrap;
         }
     </style>
 </head>
@@ -381,8 +444,28 @@
     </div>
 </div>
 
+<!-- 班級詳細資料彈窗 (Modal) -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3 id="modalTitle">班級詳細狀況</h3>
+            <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p><strong>回報人：</strong> <span id="modalReporter"></span></p>
+            <p><strong>應到人數：</strong> <span id="modalExpected"></span> 人</p>
+            <p><strong>平安人數：</strong> <span id="modalSafe"></span> 人</p>
+            <p><strong>受傷人數：</strong> <span id="modalInjured"></span> 人</p>
+            <p><strong>失聯人數：</strong> <span id="modalMissing"></span> 人</p>
+            <p><strong>回報時間：</strong> <span id="modalTime"></span></p>
+            <p><strong>特殊情況說明 / 狀況回報：</strong></p>
+            <div class="modal-note-box" id="modalNote"></div>
+        </div>
+    </div>
+</div>
+
 <script>
-    // 動態產生 Manifest，名稱一律維持為全名「靜心高中災害避難狀況回報系統」
+    // 動態產生 Manifest
     const manifestData = {
         "name": "靜心高中災害避難狀況回報系統",
         "short_name": "靜心高中災害避難狀況回報系統",
@@ -410,7 +493,7 @@
     const manifestURL = URL.createObjectURL(blob);
     document.getElementById('manifestPlaceholder').setAttribute('href', manifestURL);
 
-    // 將圖片即時動態裁切成圓形 Favicon（適用於瀏覽器頁籤）
+    // 動態 Favicon
     window.addEventListener('DOMContentLoaded', () => {
         const img = new Image();
         img.src = 'icon_earthquake.png';
@@ -439,21 +522,14 @@
 
     // 全校完整班級清單
     const allGradeClasses = [
-        // 七年級
         "七年忠班", "七年孝班", "七年仁班", "七年愛班", "七年信班", "七年義班",
-        // 八年級
         "八年忠班", "八年孝班", "八年仁班", "八年愛班", "八年信班", "八年義班",
-        // 九年級
         "九年忠班", "九年孝班", "九年仁班", "九年愛班", "九年信班", "九年義班",
-        // 十年級
         "十年誠班", "十年愛班", "十年熱班", "十年智班",
-        // 十一年級
         "十一年誠班", "十一年愛班", "十一年熱班", "十一年智班",
-        // 十二年級
         "十二年誠班", "十二年愛班", "十二年熱班", "十二年智班"
     ];
 
-    // 請求進入後台（密碼驗證）
     function requestAdminAccess() {
         const password = prompt("請輸入後台管理密碼：");
         if (password === "3118") {
@@ -464,7 +540,6 @@
         }
     }
 
-    // 顯示後台頁面
     function showAdminPage() {
         document.getElementById('userPage').classList.remove('active');
         document.getElementById('adminPage').classList.add('active');
@@ -472,7 +547,6 @@
         renderAdminDashboard();
     }
 
-    // 顯示使用者頁面
     function showUserPage() {
         document.getElementById('adminPage').classList.remove('active');
         document.getElementById('userPage').classList.add('active');
@@ -484,7 +558,6 @@
         }
     }
 
-    // 取得與儲存本地資料
     function getReports() {
         const reports = localStorage.getItem('disaster_reports');
         return reports ? JSON.parse(reports) : [];
@@ -503,7 +576,6 @@
         localStorage.setItem('disaster_reports', JSON.stringify(reports));
     }
 
-    // 表單提交處理（包含重複班級詢問彈窗）
     document.getElementById('reportForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -535,7 +607,6 @@
         this.reset();
     });
 
-    // 渲染後台資料
     function renderAdminDashboard() {
         const reports = getReports();
         const tbody = document.getElementById('reportTableBody');
@@ -560,7 +631,11 @@
                 totalMissing += report.missingCount;
 
                 tr.innerHTML = `
-                    <td><strong>${escapeHtml(report.className)}</strong></td>
+                    <td>
+                        <span class="clickable-class" onclick="openModal('${escapeHtml(report.className)}')">
+                            ${escapeHtml(report.className)}
+                        </span>
+                    </td>
                     <td>${escapeHtml(report.reporterName)}</td>
                     <td>${report.safeCount}</td>
                     <td>${report.injuredCount}</td>
@@ -582,7 +657,37 @@
         document.getElementById('totalMissing').innerText = totalMissing;
     }
 
-    // 防 HTML 注入
+    // 開啟並帶入班級詳細資料 Modal
+    function openModal(className) {
+        const reports = getReports();
+        const report = reports.find(r => r.className === className);
+        if (!report) return;
+
+        document.getElementById('modalTitle').innerText = `${report.className} 詳細狀況`;
+        document.getElementById('modalReporter').innerText = report.reporterName || '無';
+        document.getElementById('modalExpected').innerText = report.expectedCount !== undefined ? report.expectedCount : '未填寫';
+        document.getElementById('modalSafe').innerText = report.safeCount;
+        document.getElementById('modalInjured').innerText = report.injuredCount;
+        document.getElementById('modalMissing').innerText = report.missingCount;
+        document.getElementById('modalTime').innerText = report.timestamp;
+        document.getElementById('modalNote').innerText = report.note || '無特殊說明';
+
+        document.getElementById('detailModal').classList.add('active');
+    }
+
+    // 關閉 Modal
+    function closeModal() {
+        document.getElementById('detailModal').classList.remove('active');
+    }
+
+    // 點擊彈窗外部背景自動關閉
+    window.addEventListener('click', (e) => {
+        const modal = document.getElementById('detailModal');
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
     function escapeHtml(text) {
         return text.replace(/[&<>"']/g, function(m) {
             return {
@@ -595,7 +700,6 @@
         });
     }
 
-    // 資料匯出機制
     function exportData() {
         const reports = getReports();
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(reports, null, 2));
@@ -607,7 +711,6 @@
         downloadAnchor.remove();
     }
 
-    // 清除資料（密碼驗證）
     function clearData() {
         const password = prompt("清除資料屬於高風險操作，請輸入管理密碼確認：");
         if (password === "3118") {
