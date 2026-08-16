@@ -310,6 +310,10 @@
             <input type="text" id="reporterName" placeholder="請輸入姓名" required>
         </div>
         <div class="form-group">
+            <label for="expectedCount">應到人數（請輸入扣除請假以外的人數）<span class="required-asterisk">*</span></label>
+            <input type="number" id="expectedCount" min="0" value="0" required>
+        </div>
+        <div class="form-group">
             <label for="safeCount">平安人數<span class="required-asterisk">*</span></label>
             <input type="number" id="safeCount" min="0" value="0" required>
         </div>
@@ -322,7 +326,7 @@
             <input type="number" id="missingCount" min="0" value="0" required>
         </div>
         <div class="form-group">
-            <label for="note">特殊情況說明（例如：受傷細節、地點）<span class="required-asterisk">*</span></label>
+            <label for="note">特殊情況說明（例如：受傷或失聯名單細節、地點及請假名單）<span class="required-asterisk">*</span></label>
             <textarea id="note" rows="3" placeholder="若無特殊狀況請填「無」" required></textarea>
         </div>
         <button type="submit" class="btn-submit">提交回報（儲存於本地）</button>
@@ -486,6 +490,7 @@
             id: Date.now(),
             className: className,
             reporterName: document.getElementById('reporterName').value,
+            expectedCount: parseInt(document.getElementById('expectedCount').value) || 0,
             safeCount: parseInt(document.getElementById('safeCount').value) || 0,
             injuredCount: parseInt(document.getElementById('injuredCount').value) || 0,
             missingCount: parseInt(document.getElementById('missingCount').value) || 0,
