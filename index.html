@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 網頁名稱預設設定 -->
+    <!-- 網頁名稱標題 -->
     <title id="pageTitle">靜心高中災害避難狀況回報系統</title>
 
-    <!-- 主畫面圖示 (iOS Safari 專用) -->
-    <link rel="apple-touch-icon" href="icon_earthquake2.png">
-    <link rel="apple-touch-icon-precomposed" href="icon_earthquake2.png">
-    <link rel="apple-touch-icon" href="https://tahai-hsieh.github.io/Status-Report/icon_earthquake2.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon_earthquake2.png">
+    <!-- 主畫面圖示 (iOS Safari 專用，會由 JS 動態切換) -->
+    <link rel="apple-touch-icon" id="appleTouchIcon" href="icon_earthquake.png">
+    <link rel="apple-touch-icon-precomposed" id="appleTouchIconPre" href="icon_earthquake.png">
+    <link rel="icon" type="image/png" sizes="192x192" id="androidIcon" href="icon_earthquake.png">
 
-    <!-- 網頁分頁圖案（Favicon 圓形設定） -->
-    <link rel="icon" type="image/png" id="dynamicFavicon" href="icon_earthquake2.png">
+    <!-- 網頁分頁圖案（Favicon 圓形設定，會由 JS 動態切換） -->
+    <link rel="icon" type="image/png" id="dynamicFavicon" href="icon_earthquake.png">
 
     <!-- PWA Manifest 設定 -->
     <link rel="manifest" id="manifestPlaceholder">
@@ -295,7 +294,7 @@
 
 <header>
     <h2>
-        <img src="icon_earthquake2.png" alt="圖示" class="header-icon">
+        <img src="icon_earthquake.png" id="headerIconImg" alt="圖示" class="header-icon">
         <span id="headerTitle">靜心高中災害避難狀況回報系統</span>
     </h2>
     <div class="header-status-container">
@@ -483,16 +482,25 @@
         console.warn("Firebase 初始化失敗，切換為純離線模式", e);
     }
 
-    // 檢查網址是否有 ?mode=admin
+    // 判斷是否為後台模式 (?mode=admin)
     const urlParams = new URLSearchParams(window.location.search);
     const isAdminMode = urlParams.get('mode') === 'admin';
-    const siteTitleName = isAdminMode ? "靜心高中災害避難狀況回報系統（後台）" : "靜心高中災害避難狀況回報系統";
 
-    // 設定頁面與 Header 標題
+    // 依模式選擇對應名稱與圖片（使用者端為 icon_earthquake.png，後台端為 icon_earthquake2.png）
+    const siteTitleName = isAdminMode ? "靜心高中災害避難狀況回報系統（後台）" : "靜心高中災害避難狀況回報系統";
+    const currentIcon = isAdminMode ? "icon_earthquake2.png" : "icon_earthquake.png";
+
+    // 更新頁面標題與 Header 圖示
     document.getElementById('pageTitle').innerText = siteTitleName;
     document.getElementById('headerTitle').innerText = siteTitleName;
+    document.getElementById('headerIconImg').src = currentIcon;
 
-    // 動態 Manifest (使用 icon_earthquake2.png)
+    // 動態更新 iOS Apple Touch Icon 與 Android 圖示
+    document.getElementById('appleTouchIcon').href = currentIcon;
+    document.getElementById('appleTouchIconPre').href = currentIcon;
+    document.getElementById('androidIcon').href = currentIcon;
+
+    // 動態 Manifest 設定
     const manifestData = {
         "name": siteTitleName,
         "short_name": siteTitleName,
@@ -502,13 +510,13 @@
         "theme_color": "#2c3e50",
         "icons": [
             {
-                "src": "icon_earthquake2.png",
+                "src": currentIcon,
                 "sizes": "192x192",
                 "type": "image/png",
                 "purpose": "any maskable"
             },
             {
-                "src": "https://tahai-hsieh.github.io/Status-Report/icon_earthquake2.png",
+                "src": `https://tahai-hsieh.github.io/Status-Report/${currentIcon}`,
                 "sizes": "512x512",
                 "type": "image/png",
                 "purpose": "any maskable"
@@ -520,10 +528,10 @@
     const manifestURL = URL.createObjectURL(blob);
     document.getElementById('manifestPlaceholder').setAttribute('href', manifestURL);
 
-    // 動態 Favicon (切換為 icon_earthquake2.png)
+    // 動態繪製圓形 Favicon
     window.addEventListener('DOMContentLoaded', () => {
         const img = new Image();
-        img.src = 'icon_earthquake2.png';
+        img.src = currentIcon;
         img.onload = () => {
             const canvas = document.createElement('canvas');
             canvas.width = 64;
