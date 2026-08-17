@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 網頁名稱設定 -->
-    <title>靜心高中災害避難狀況回報系統</title>
+    <!-- 網頁名稱預設設定 -->
+    <title id="pageTitle">靜心高中災害避難狀況回報系統</title>
 
     <!-- 主畫面圖示 (iOS Safari 專用) -->
-    <link rel="apple-touch-icon" href="icon_earthquake.png">
-    <link rel="apple-touch-icon-precomposed" href="icon_earthquake.png">
-    <link rel="apple-touch-icon" href="https://tahai-hsieh.github.io/Status-Report/icon_earthquake.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon_earthquake.png">
+    <link rel="apple-touch-icon" href="icon_earthquake2.png">
+    <link rel="apple-touch-icon-precomposed" href="icon_earthquake2.png">
+    <link rel="apple-touch-icon" href="https://tahai-hsieh.github.io/Status-Report/icon_earthquake2.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon_earthquake2.png">
 
     <!-- 網頁分頁圖案（Favicon 圓形設定） -->
-    <link rel="icon" type="image/png" id="dynamicFavicon" href="icon_earthquake.png">
+    <link rel="icon" type="image/png" id="dynamicFavicon" href="icon_earthquake2.png">
 
     <!-- PWA Manifest 設定 -->
     <link rel="manifest" id="manifestPlaceholder">
@@ -63,25 +63,6 @@
             flex-shrink: 0;
         }
 
-        .admin-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background-color: #34495e;
-            color: white;
-            border: 1px solid #7f8c8d;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: background 0.3s;
-            z-index: 10;
-            white-space: nowrap;
-        }
-        .admin-btn:hover {
-            background-color: #4e6d8c;
-        }
-
         .header-status-container {
             text-align: center;
         }
@@ -89,7 +70,7 @@
         @media (max-width: 768px) {
             header {
                 align-items: flex-start;
-                padding: 1rem 100px 1rem 1rem;
+                padding: 1rem;
             }
             header h2 {
                 font-size: 1.1rem;
@@ -102,7 +83,7 @@
 
         @media (max-width: 480px) {
             header {
-                padding: 0.8rem 85px 0.8rem 0.8rem;
+                padding: 0.8rem;
             }
             header h2 {
                 font-size: 0.95rem;
@@ -111,12 +92,6 @@
             .header-icon {
                 width: 22px;
                 height: 22px;
-            }
-            .admin-btn {
-                top: 10px;
-                right: 8px;
-                padding: 5px 8px;
-                font-size: 0.75rem;
             }
         }
 
@@ -320,10 +295,9 @@
 
 <header>
     <h2>
-        <img src="icon_earthquake.png" alt="圖示" class="header-icon">
-        <span>靜心高中災害避難狀況回報系統</span>
+        <img src="icon_earthquake2.png" alt="圖示" class="header-icon">
+        <span id="headerTitle">靜心高中災害避難狀況回報系統</span>
     </h2>
-    <button class="admin-btn" id="adminHeaderBtn" onclick="requestAdminAccess()">進入後台</button>
     <div class="header-status-container">
         <div class="status-badge offline-status" id="connectionStatus">離線 / 本地模式運作中</div>
     </div>
@@ -509,23 +483,32 @@
         console.warn("Firebase 初始化失敗，切換為純離線模式", e);
     }
 
-    // 動態 Manifest
+    // 檢查網址是否有 ?mode=admin
+    const urlParams = new URLSearchParams(window.location.search);
+    const isAdminMode = urlParams.get('mode') === 'admin';
+    const siteTitleName = isAdminMode ? "靜心高中災害避難狀況回報系統（後台）" : "靜心高中災害避難狀況回報系統";
+
+    // 設定頁面與 Header 標題
+    document.getElementById('pageTitle').innerText = siteTitleName;
+    document.getElementById('headerTitle').innerText = siteTitleName;
+
+    // 動態 Manifest (使用 icon_earthquake2.png)
     const manifestData = {
-        "name": "靜心高中災害避難狀況回報系統",
-        "short_name": "靜心高中災害避難狀況回報系統",
+        "name": siteTitleName,
+        "short_name": siteTitleName,
         "start_url": "./",
         "display": "standalone",
         "background_color": "#2c3e50",
         "theme_color": "#2c3e50",
         "icons": [
             {
-                "src": "icon_earthquake.png",
+                "src": "icon_earthquake2.png",
                 "sizes": "192x192",
                 "type": "image/png",
                 "purpose": "any maskable"
             },
             {
-                "src": "https://tahai-hsieh.github.io/Status-Report/icon_earthquake.png",
+                "src": "https://tahai-hsieh.github.io/Status-Report/icon_earthquake2.png",
                 "sizes": "512x512",
                 "type": "image/png",
                 "purpose": "any maskable"
@@ -537,10 +520,10 @@
     const manifestURL = URL.createObjectURL(blob);
     document.getElementById('manifestPlaceholder').setAttribute('href', manifestURL);
 
-    // 動態 Favicon
+    // 動態 Favicon (切換為 icon_earthquake2.png)
     window.addEventListener('DOMContentLoaded', () => {
         const img = new Image();
-        img.src = 'icon_earthquake.png';
+        img.src = 'icon_earthquake2.png';
         img.onload = () => {
             const canvas = document.createElement('canvas');
             canvas.width = 64;
@@ -558,8 +541,7 @@
             link.href = canvas.toDataURL('image/png');
         };
 
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('mode') === 'admin') {
+        if (isAdminMode) {
             requestAdminAccess();
         }
     });
@@ -586,14 +568,12 @@
     function showAdminPage() {
         document.getElementById('userPage').classList.remove('active');
         document.getElementById('adminPage').classList.add('active');
-        document.getElementById('adminHeaderBtn').style.display = 'none';
         renderAdminDashboard();
     }
 
     function showUserPage() {
         document.getElementById('adminPage').classList.remove('active');
         document.getElementById('userPage').classList.add('active');
-        document.getElementById('adminHeaderBtn').style.display = 'block';
         
         if (window.location.search.includes('mode=admin')) {
             const newUrl = window.location.pathname;
@@ -696,7 +676,6 @@
             return;
         }
 
-        // 檢查是否有未完成回報的班級
         const reportedClasses = reports.map(r => r.className);
         const hasUnreported = allGradeClasses.some(cls => !reportedClasses.includes(cls));
 
@@ -707,13 +686,11 @@
             }
         }
 
-        // 提示輸入自訂標題
         const customTitleInput = prompt("請輸入匯出檔案的標題（若無請直接留空按下確定）：");
-        if (customTitleInput === null) return; // 使用者按取消
+        if (customTitleInput === null) return;
 
         const customTitle = customTitleInput.trim() ? `_${customTitleInput.trim()}` : '';
 
-        // 依據時間排序計算最前與最後回報時間
         const sortedReports = [...reports].sort((a, b) => a.id - b.id);
         const firstTime = sortedReports[0].timestamp.replace(/:/g, '-');
         const lastTime = sortedReports[sortedReports.length - 1].timestamp.replace(/:/g, '-');
@@ -844,7 +821,6 @@
         reader.readAsText(file);
     }
 
-    // 清除本地 LocalStorage 以及 Firebase 雲端資料庫
     function clearData() {
         const password = prompt("清除資料屬於高風險操作，請輸入管理密碼確認：");
         if (password === "3118") {
